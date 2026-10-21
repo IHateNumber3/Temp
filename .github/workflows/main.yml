@@ -1,0 +1,27 @@
+name: Sign shortcut
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "AntiRevoke_Sideload_Guide_RU.shortcut"
+
+jobs:
+  sign:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sign (anyone)
+        run: |
+          mkdir -p signed
+          shortcuts sign --mode anyone \
+            --input "AntiRevoke_Sideload_Guide_RU.shortcut" \
+            --output "signed/AntiRevoke_Sideload_Guide_RU.shortcut"
+          ls -l signed
+          head -c 4 signed/AntiRevoke_Sideload_Guide_RU.shortcut | xxd
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-shortcut
+          path: signed/AntiRevoke_Sideload_Guide_RU.shortcut
