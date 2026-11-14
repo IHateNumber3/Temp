@@ -1,27 +1,51 @@
-name: Sign shortcut
+
+name: Get SF Symbols SVG
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "AntiRevoke_Sideload_Guide_RU.shortcut"
 
 jobs:
-  sign:
-    runs-on: macos-14
+  download:
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Sign (anyone)
+      - name: Download SF Symbols collection
         run: |
-          mkdir -p signed
-          shortcuts sign --mode anyone \
-            --input "AntiRevoke_Sideload_Guide_RU.shortcut" \
-            --output "signed/AntiRevoke_Sideload_Guide_RU.shortcut"
-          ls -l signed
-          head -c 4 signed/AntiRevoke_Sideload_Guide_RU.shortcut | xxd
+          git clone --depth 1 https://github.com/brendanballon/sfsymbols-svg.git sf-source
 
-      - uses: actions/upload-artifact@v4
+      - name: Extract requested SVG files
+        shell: bash
+        run: |
+          mkdir -p extracted
+
+          symbols=(
+            "arrow.up"
+            "arrow.down"
+            "hand.point.up.left.fill"
+            "magnifyingglass"
+            "pause.fill"
+            "chevron.left.forwardslash.chevron.right"
+            "xmark"
+            "hand.draw.fill"
+            "r.joystick.fill"
+            "slider.horizontal.3"
+            "arrow.counterclockwise"
+          )
+
+          for symbol in "${symbols[@]}"; do
+            file=$(find sf-source/symbols -type f -name "$symbol.svg" -print -quit)
+
+            if [ -n "$file" ]; then
+              cp "$file" "extracted/$symbol.svg"
+              echo "FOUND: $symbol"
+            else
+              echo "MISSING: $symbol"
+            fi
+          done
+
+      - name: Upload SVG artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: signed-shortcut
-          path: signed/AntiRevoke_Sideload_Guide_RU.shortcut
+          name: SF-Symbols-SVG
+          path: extracted/
+          if-no-files-found: error
